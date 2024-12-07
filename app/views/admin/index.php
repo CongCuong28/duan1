@@ -18,9 +18,12 @@ if(!isset($_SESSION['user_id'])) {
   }
 }
 include "../../models/cate_sql_funcs.php";
+include "../../models/user_sql_funcs.php";
 include "../../models/product_sql_funcs.php";
 include "../../models/image_sql_funcs.php";
 include "../../models/order_sql_funcs.php";
+include "../../models/role_sql_funcs.php";
+include "../../models/promotion_sql_funcs.php";
 include "./layouts/header.php";
 include "./layouts/sidebar.php";
 
@@ -348,9 +351,65 @@ include "./layouts/sidebar.php";
           include "./pages/variants/images.php";
           break;
         // User
-       
+        case "users":
+          $users = query_all("users", "desc");
+          include "./pages/users/users.php";
+          break;
+        case "add_user":
+          if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $display_name = $_POST['display_name'];
+            $username = $_POST['username'];
+            $password = $_POST['password'];
+            $email = $_POST['email'];
+            $role = $_POST['role'];
+
+            insert_user($display_name, $username, $password, $email, $role);
+            $_SESSION['success'] = 'Thêm mới user thành công';
+            header('Location: index.php?act=add_user');
+          }
+          include "./pages/users/add_user.php";
+          break;
+        case "delete_user":
+          if (isset($_GET["user_id"])) {
+            $id = $_GET["user_id"];
+            delete_row("users", $id);
+            header("Location: index.php?act=users");
+          }
+          break;
+        case "edit_user":
+          if (isset($_GET["user_id"])) {
+            $id = $_GET["user_id"];
+            $user = query_one("users", $id);
+            extract($user);
+            if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+              $id = $_POST['id'];
+              $tel = $_POST['tel'];
+              $address = $_POST['address'];
+              $display_name = $_POST['display_name'];
+              $username = $_POST['username'];
+              $password = $_POST['password'];
+              $email = $_POST['email'];
+              $role = $_POST['role'];
+
+              update_user($id, $username, $password, $email, $tel, $address, $display_name, $role);
+              $_SESSION['success'] = "<div class='success'>Lưu thông tin thành công</div>";
+              header("Location: index.php?act=edit_user&user_id=$id&status=success");
+            }
+          }
+          include "./pages/users/detail_user.php";
+          break;
         // Comment
-        
+        case "comments":
+          $comments = query_all("comments", "desc");
+          include "./pages/comments/comments.php";
+          break;
+        case "delete_comment":
+          if (isset($_GET['comment_id'])) {
+            $id = $_GET['comment_id'];
+            delete_row("comments", $id);
+            header('Location: index.php?act=comments');
+          }
+          break;
         // Banner
         case 'banners':
           $banners = query_all("banners");
@@ -530,9 +589,98 @@ include "./layouts/sidebar.php";
           include "./pages/orders/edit_order_product.php";
           break;
         // Promotion
-        
+        case "promotions":
+          $promotions = query_all("detail_promotion");
+          include "./pages/promotions/promotions.php";
+          break;
+        case "add_promotion":
+          if($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $name = $_POST['name'];
+            $code = $_POST['code'];
+            $discount = $_POST['discount'];
+            $start_date = $_POST['start_date'];
+            $end_date = $_POST['end_date'];
+
+            insert_promotion($name, $code, $discount, $start_date, $end_date);
+            header("Location: index.php?act=promotions");
+          }
+          include "./pages/promotions/add_promotion.php";
+          break;
+        case "product_promotion":
+          if(isset($_GET['promotion_id'])) {
+            $promotion_id = $_GET['promotion_id'];
+            $products = query_all("products");
+          }
+          include "./pages/promotions/products_promotion.php";
+          break;
+        case "edit_promotion":
+          if(isset($_GET['promotion_id'])) {
+            $promotion_id = $_GET['promotion_id'];
+            $promotion = query_one("detail_promotion", $promotion_id);
+            extract($promotion);
+            if($_SERVER['REQUEST_METHOD'] == 'POST') {
+              $id = $_POST['id'];
+              $name = $_POST['name'];
+              $code = $_POST['code'];
+              $discount = $_POST['discount'];
+              $start_date = $_POST['start_date'];
+              $end_date = $_POST['end_date'];
+
+              update_promotion($id, $name, $code, $discount, $start_date, $end_date);
+              $_SESSION['success'] = "<div class='success'>Lưu thông tin thành công</div>";
+              header("Location: index.php?act=edit_promotion&promotion_id=$promotion_id&status=success");
+            }
+          }
+          include "./pages/promotions/edit_promotion.php";
+          break;
+        case "delete_promotion":
+          if(isset($_GET['promotion_id'])) {
+            $promotion_id = $_GET['promotion_id'];
+            delete_row("detail_promotion", $promotion_id);
+            header("Location: index.php?act=promotions");
+          }
+          break;
+        case "apply_promotion":
+          if(isset($_GET['product_id']) && isset($_GET['promotion_id'])) {
+            $product_id = $_GET['product_id'];
+            $promotion_id = $_GET['promotion_id'];
+
+            apply_promotion($product_id, $promotion_id);
+            header("Location: index.php?act=product_promotion&promotion_id=".$promotion_id);
+          }
+          break;
+        case "unapply_promotion":
+          if(isset($_GET['promotion_id']) && isset($_GET['id'])) {
+            $id = $_GET['id'];
+            $promotion_id = $_GET['promotion_id'];
+            delete_row("promotions", $id);
+            header("Location: index.php?act=product_promotion&promotion_id=".$promotion_id);
+          }
+          break;
         // Contact
-       
+        case "contacts":
+          $contacts = query_all("contacts", "desc");
+          include "./pages/contacts/contacts.php";
+          break;
+        case "delete_contact":
+          if (isset($_GET["contact_id"])) {
+            $id = $_GET["contact_id"];
+            delete_row("contacts", $id);
+            header("Location: index.php?act=contacts");
+          }
+          break;
+        case "show_contact":
+          if(isset($_GET['contact_id'])) {
+            show_row("contacts", $_GET['contact_id']);
+            header("Location: index.php?act=contacts");
+          }
+          break;
+        case "hide_contact":
+          if(isset($_GET['contact_id'])) {
+            hide_row("contacts", $_GET['contact_id']);
+            header("Location: index.php?act=contacts");
+          }
+          break;
         // Color
         case "colors":
           $colors = query_all("colors");
@@ -554,8 +702,7 @@ include "./layouts/sidebar.php";
             header("Location: index.php?act=colors");
           }
           break;
-
-          // Size
+        // Size
         case "sizes":
           $sizes = query_all("sizes");
           include "./pages/sizes/sizes.php";
@@ -576,9 +723,46 @@ include "./layouts/sidebar.php";
             header("Location: index.php?act=sizes");
           }
           break;
-        
         //roles
-        
+        case "roles":
+          $roles = query_all("roles");
+          include "./pages/roles/roles.php";
+          break;
+        case "add_role":
+          if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $name = $_POST['name'];
+
+            insert_role($name);
+            header("Location: index.php?act=roles");
+          }
+          include "./pages/roles/add_role.php";
+          break;
+        case "edit_role":
+          if (isset($_GET['role_id'])) {
+            $role_id = $_GET['role_id'];
+            if($role_id == 1) {
+              header("Location: index.php?act=roles");
+            }
+            $role = query_one("roles", $role_id);
+            extract($role);
+            if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+              $id = $_POST['id'];
+              $name = $_POST['name'];
+
+              update_role($id, $name);
+              $_SESSION['success'] = "<div class='success'>Lưu thông tin thành công</div>";
+              header("Location: index.php?act=edit_role&role_id=$role_id&status=success");
+            }
+          }
+          include "./pages/roles/edit_role.php";
+          break;
+        case "delete_role":
+          if (isset($_GET['role_id'])) {
+            $role_id = $_GET['role_id'];
+            delete_row("roles", $role_id);
+            header("Location: index.php?act=roles");
+          }
+          break;
         // Chart
         case "charts":
           include "./pages/charts/charts.php";

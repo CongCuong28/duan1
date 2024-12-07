@@ -5,7 +5,7 @@ function pdo_get_connection(){
     $password = '';
 
     $conn = new PDO($dburl, $username, $password);
-    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $conn->exec("SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");// Vô hiệu hóa chế độ ONLY_FULL_GROUP_BY
     return $conn;
 }
 
@@ -14,7 +14,7 @@ function pdo_execute($sql){
     try{
         $conn = pdo_get_connection();
         $stmt = $conn->prepare($sql);
-        $stmt->execute($sql_args);
+        // $stmt->execute($sql_args);
         return $conn->lastInsertId();
     }
     catch(PDOException $e){
@@ -31,7 +31,7 @@ function pdo_query($sql){
         $conn = pdo_get_connection();
         $stmt = $conn->prepare($sql);
         $stmt->execute($sql_args);
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $stmt->fetchAll();
         return $rows;
     }
     catch(PDOException $e){
